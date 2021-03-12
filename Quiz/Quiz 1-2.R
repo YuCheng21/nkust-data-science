@@ -5,4 +5,4 @@ diff = as.integer(date2 - date1)
 year = as.integer(diff / 365L)
 day = as.integer(diff %% 365)
 
-cat(year, "¦~",day, "¤Ñ")
+cat(year, "å¹´",day, "å¤©")
