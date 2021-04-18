@@ -1,0 +1,2 @@
+a = scan()
+print(a)
