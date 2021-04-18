@@ -1,240 +1,135 @@
-
-#去除標點符號的函式,並去除NA值和計算字數
-np_gsub <- function(np,i){
-  for (p in 1:nc[i]) {
-    #去除標點符號
-    np[1,p] <- gsub("[[:punct:]]", "",np[1,p])
-    #處理NA值
-    np[is.na(np)]<-""
-
+# 設定工作目錄
+setwd("E:/Programs/R/Projects/nkust-data-science/Mid-Project/Abstract")
+# 全部摘要名稱
+all_abstract <- 1:100
+# ============================================================
+# Function: 清除標點符號和 na 值，並計算單字出現次數
+cleaning_split <- function(split_word, i){
+  # 取得摘要內所有單字數量，並遞迴處理
+  for (j in 1:number_of_split_col[i]) {
+    # 清除標點符號
+    split_word[1, j] <- gsub("[[:punct:]]", "",split_word[1, j])
+    # 將 na 值填入空字串
+    split_word[is.na(split_word)] <- ""
   }
-  assign(paste0("count_word",as.character(i)),(as.data.frame(table(unlist(np, use.names = FALSE)), stringsAsFactors = FALSE)), envir = .GlobalEnv)
-  return(np)
+  # 計算每個單字出現的頻率(不重複)，存入全域變數中
+  assign(paste0("number_of_word_", as.character(i)),
+         (as.data.frame(table(unlist(split_word, use.names = FALSE)),
+                        stringsAsFactors = FALSE)),envir = .GlobalEnv)
+  # 回傳清理乾淨的單字
+  return(split_word)
 }
-
-#計算TF的函式
-tf_fun <- function(count_word,np) {
-  tf_A <- c()
-  for(i in 1:nrow(count_word)){
-    tf_A[i] <- as.integer(count_word[i,2])/ ncol(np)
+# --------------------------------------------------
+# 摘要內所有單字數量
+number_of_split_col <- c()
+# 遞迴執行函式在所有摘要上
+for (i in all_abstract) {
+  # 設定輸入檔案名稱
+  file_name <- paste0(as.character(i), ".txt")
+  # 利用 csv 特性以【空格】分割單字到表格中
+  split_word <- read.csv(file_name,
+                header = FALSE,
+                stringsAsFactors = FALSE,
+                sep = " ",
+                fileEncoding ="UTF-8")
+  # 取得表格中的 col 數量，也就是摘要內所有單字數量
+  number_of_split_col[i] <- ncol(split_word)
+  # 呼叫函式擷取乾淨單字，並儲存變數
+  assign(paste0("clean_split_", as.character(i)), cleaning_split(split_word, i))
+}
+# ============================================================
+# Function: 計算 TF
+calculate_tf <- function(number_of_word, clean_split) {
+  # 每個摘要內、每個單字的 TF 值
+  tf_of_word <- c()
+  # 取得摘要內每個單字出現的頻率，並遞迴處理
+  for(i in 1:nrow(number_of_word)){
+    # tf = 檔案中該單字數量 / 單字總數
+    tf_of_word[i] <- as.integer(number_of_word[i, 2]) / ncol(clean_split)
   }
-  return(tf_A)
+  # 回傳每個摘要內、每個單字的 TF 值
+  return(tf_of_word)
 }
-
-#計算IDF的函式
-idf_fun <- function(count_word){
-
-  idf <- 0
-
-  for(i in 1:nrow(count_word)){
-    idf[i] <- 0
-    #print(count_word1[i+1,1])
-    if(count_word[i,1] %in% count_word1[,1]){
-      idf[i] <- idf[i] + 1
+# --------------------------------------------------
+# 遞迴執行函式在所有摘要上
+for (i in all_abstract) {
+  # 計算每個單字的 TF 值，並存入全域變數中
+  assign(paste0("tf_",as.character(i)),
+         calculate_tf(get(paste0("number_of_word_", as.character(i))),
+                get(paste0("clean_split_", as.character(i)))))
+}
+# ============================================================
+# Function: 計算 IDF
+calculate_idf <- function(number_of_word){
+  # 每個摘要內、每個單字的 IDF 值
+  idf_of_word <- c()
+  # 取得摘要內每個單字出現的頻率，並遞迴處理
+  for(i in 1:nrow(number_of_word)){
+    # 初始化 IDF 值
+    idf_of_word[i] <- 0
+    # 取得每個摘要中、每個單字出現的頻率
+    for(j in all_abstract){
+      # 如果該摘要(j)中有出現該單字(i)，則出現次數 + 1
+      if(number_of_word[i,1] %in% get(paste0("number_of_word_",as.character(j)))[,1]){
+        idf_of_word[i] <- idf_of_word[i] + 1
+      }
     }
-    if(count_word[i,1] %in% count_word2[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word3[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word4[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word5[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word6[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word7[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word8[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word9[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word10[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word11[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word12[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word13[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word14[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word15[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word16[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word17[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word18[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word19[,1]){
-      idf[i] <- idf[i] + 1
-    }
-    if(count_word[i,1] %in% count_word20[,1]){
-      idf[i] <- idf[i] + 1
-    }
-
-    idf[i] <- log((20 / (idf[i])), base = 10)
-
+    # IDF = log(文章總數 / 含有該單字的文章數目)
+    idf_of_word[i] <- log((length(all_abstract) / (idf_of_word[i])), base = 10)
   }
-  return(idf)
+  # 回傳每個摘要內、每個單字的 IDF 值
+  return(idf_of_word)
 }
-
-#計算TF-IDF的函式
-tf_idf_fun <- function(tf,idf,count_word){
-  tf_idf <- c()
-  for(i in 1:nrow(count_word)){
-    tf_idf[i]<- 0
-    tf_idf[i] <- idf[i]*tf[i]
+# --------------------------------------------------
+# 遞迴執行函式在所有摘要上
+for (i in all_abstract) {
+  # 計算每個單字的 IDF 值，並存入全域變數中
+  assign(paste0("idf_", as.character(i)),
+         calculate_idf(get(paste0("number_of_word_", as.character(i)))))
+}
+# ============================================================
+# Function: 計算 TF-IDF
+calculate_tf_idf <- function(tf_of_word, idf_of_word, number_of_word){
+  # 每個摘要內、每個單字的 TF-IDF 值
+  tf_idf_of_word <- c()
+  # 取得摘要內每個單字出現的頻率，並遞迴處理
+  for(i in 1:nrow(number_of_word)){
+    # 初始化 TF-IDF 值
+    tf_idf_of_word[i] <- 0
+    # TF-IDF = TF * IDF
+    tf_idf_of_word[i] <- idf_of_word[i] * tf_of_word[i]
   }
-
-  return(tf_idf)
+  # 回傳每個摘要內、每個單字的 TF-IDF 值
+  return(tf_idf_of_word)
 }
-#印出各篇前10重要的
-view_top10 <- function(count_word, tf, idf, tf_idf){
-  tf_idf_sol <- data.frame(count_word, tf, idf, tf_idf)
-  tf_idf_pop <- tf_idf_sol[order(tf_idf_sol$tf_idf, decreasing = TRUE),]
-  tf_idf_top10 <- tf_idf_pop[1:10, ]
-  return(tf_idf_top10)
+# --------------------------------------------------
+# 遞迴執行函式在所有摘要上
+for (i in all_abstract) {
+  # 計算每個單字的 TF-IDF 值，並存入全域變數中
+  assign(paste0("tf_idf_", as.character(i)),
+         calculate_tf_idf(get(paste0("tf_", as.character(i))),
+                    get(paste0("idf_", as.character(i))),
+                    get(paste0("number_of_word_", as.character(i)))))
 }
-
-
-#以下為主程式---------------------------------------
-
-setwd("E:/Programs/R/Projects/nkust-data-science/Mid-Project/summary")
-nc <- c()
-num <- 1:20
-#a <- c()
-#myfiles <- list.files(pattern = "*.txt")#讀取資料夾內檔案名稱
-
-#讀取資料依序填入np_1,np_2....np_20，並去除標點符號
-for (i in num) {
-  # 遞迴獲取 1.txt, 2.txt 3.txt ... n.txt
-  file <- paste0(as.character(i),".txt")
-  # 使用 read.csv 讀取
-  nc[i] <- ncol(read.csv(file, header = FALSE, stringsAsFactors = FALSE, sep = " ", fileEncoding ="UTF-8"))
-  A <- read.csv(file, header = FALSE, stringsAsFactors = FALSE, sep = " ", fileEncoding ="UTF-8")
-  assign(paste0("np_",as.character(i)),np_gsub(A,i))#
+# ============================================================
+# Function: 列出前 10 重要的單字
+list_top <- function(number_of_word, tf, idf, tf_idf){
+  # 取得每個摘要內的所有單字值、TF、IDF、TF-IDF
+  tf_idf_word <- data.frame(number_of_word, tf, idf, tf_idf)
+  # 依照 TF-IDF 來排序單字重要度
+  tf_idf_sort <- tf_idf_word[order(tf_idf_word$tf_idf, decreasing = TRUE),]
+  # 取出前 10 重要的單字
+  tf_idf_top <- tf_idf_sort[1:10,]
+  # 回傳每個摘要內前 10 重要的單字
+  return(tf_idf_top)
 }
-
-
-tf_1 <- tf_fun(count_word1,np_1)
-tf_2 <- tf_fun(count_word2,np_2)
-tf_3 <- tf_fun(count_word3,np_3)
-tf_4 <- tf_fun(count_word4,np_4)
-tf_5 <- tf_fun(count_word5,np_5)
-tf_6 <- tf_fun(count_word6,np_6)
-tf_7 <- tf_fun(count_word7,np_7)
-tf_8 <- tf_fun(count_word8,np_8)
-tf_9 <- tf_fun(count_word9,np_9)
-tf_10 <- tf_fun(count_word10,np_10)
-tf_11 <- tf_fun(count_word11,np_11)
-tf_12 <- tf_fun(count_word12,np_12)
-tf_13 <- tf_fun(count_word13,np_13)
-tf_14 <- tf_fun(count_word14,np_14)
-tf_15 <- tf_fun(count_word15,np_15)
-tf_16 <- tf_fun(count_word16,np_16)
-tf_17 <- tf_fun(count_word17,np_17)
-tf_18 <- tf_fun(count_word18,np_18)
-tf_19 <- tf_fun(count_word19,np_19)
-tf_20 <- tf_fun(count_word20,np_20)
-
-idf_1 <- idf_fun(count_word1)
-idf_2 <- idf_fun(count_word2)
-idf_3 <- idf_fun(count_word3)
-idf_4 <- idf_fun(count_word4)
-idf_5 <- idf_fun(count_word5)
-idf_6 <- idf_fun(count_word6)
-idf_7 <- idf_fun(count_word7)
-idf_8 <- idf_fun(count_word8)
-idf_9 <- idf_fun(count_word9)
-idf_10 <- idf_fun(count_word10)
-idf_11 <- idf_fun(count_word11)
-idf_12 <- idf_fun(count_word12)
-idf_13 <- idf_fun(count_word13)
-idf_14 <- idf_fun(count_word14)
-idf_15 <- idf_fun(count_word15)
-idf_16 <- idf_fun(count_word16)
-idf_17 <- idf_fun(count_word17)
-idf_18 <- idf_fun(count_word18)
-idf_19 <- idf_fun(count_word19)
-idf_20 <- idf_fun(count_word20)
-
-tf_idf_1 <- tf_idf_fun(tf_1,idf_1,count_word1)
-tf_idf_2 <- tf_idf_fun(tf_2,idf_2,count_word2)
-tf_idf_3 <- tf_idf_fun(tf_3,idf_3,count_word3)
-tf_idf_4 <- tf_idf_fun(tf_4,idf_4,count_word4)
-tf_idf_5 <- tf_idf_fun(tf_5,idf_5,count_word5)
-tf_idf_6 <- tf_idf_fun(tf_6,idf_6,count_word6)
-tf_idf_7 <- tf_idf_fun(tf_7,idf_7,count_word7)
-tf_idf_8 <- tf_idf_fun(tf_8,idf_8,count_word8)
-tf_idf_9 <- tf_idf_fun(tf_9,idf_9,count_word9)
-tf_idf_10 <- tf_idf_fun(tf_10,idf_10,count_word10)
-tf_idf_11 <- tf_idf_fun(tf_11,idf_11,count_word11)
-tf_idf_12 <- tf_idf_fun(tf_12,idf_12,count_word12)
-tf_idf_13 <- tf_idf_fun(tf_13,idf_13,count_word13)
-tf_idf_14 <- tf_idf_fun(tf_14,idf_14,count_word14)
-tf_idf_15 <- tf_idf_fun(tf_15,idf_15,count_word15)
-tf_idf_16 <- tf_idf_fun(tf_16,idf_16,count_word16)
-tf_idf_17 <- tf_idf_fun(tf_17,idf_17,count_word17)
-tf_idf_18 <- tf_idf_fun(tf_18,idf_18,count_word18)
-tf_idf_19 <- tf_idf_fun(tf_19,idf_19,count_word19)
-tf_idf_20 <- tf_idf_fun(tf_20,idf_20,count_word20)
-
-tf_idf_top_1 <- view_top10(count_word1, tf_1, idf_1, tf_idf_1)
-tf_idf_top_2 <- view_top10(count_word2, tf_2, idf_2, tf_idf_2)
-tf_idf_top_3 <- view_top10(count_word3, tf_3, idf_3, tf_idf_3)
-tf_idf_top_4 <- view_top10(count_word4, tf_4, idf_4, tf_idf_4)
-tf_idf_top_5 <- view_top10(count_word5, tf_5, idf_5, tf_idf_5)
-tf_idf_top_6 <- view_top10(count_word6, tf_6, idf_6, tf_idf_6)
-tf_idf_top_7 <- view_top10(count_word7, tf_7, idf_7, tf_idf_7)
-tf_idf_top_8 <- view_top10(count_word8, tf_8, idf_8, tf_idf_8)
-tf_idf_top_9 <- view_top10(count_word9, tf_9, idf_9, tf_idf_9)
-tf_idf_top_10 <- view_top10(count_word10, tf_10, idf_10, tf_idf_10)
-tf_idf_top_11 <- view_top10(count_word11, tf_11, idf_11, tf_idf_11)
-tf_idf_top_12 <- view_top10(count_word12, tf_12, idf_12, tf_idf_12)
-tf_idf_top_13 <- view_top10(count_word13, tf_13, idf_13, tf_idf_13)
-tf_idf_top_14 <- view_top10(count_word14, tf_14, idf_14, tf_idf_14)
-tf_idf_top_15 <- view_top10(count_word15, tf_15, idf_15, tf_idf_15)
-tf_idf_top_16 <- view_top10(count_word16, tf_16, idf_16, tf_idf_16)
-tf_idf_top_17 <- view_top10(count_word17, tf_17, idf_17, tf_idf_17)
-tf_idf_top_18 <- view_top10(count_word18, tf_18, idf_18, tf_idf_18)
-tf_idf_top_19 <- view_top10(count_word19, tf_19, idf_19, tf_idf_19)
-tf_idf_top_20 <- view_top10(count_word20, tf_20, idf_20, tf_idf_20)
-
-View(tf_idf_top_1)
-View(tf_idf_top_2)
-View(tf_idf_top_3)
-View(tf_idf_top_4)
-View(tf_idf_top_5)
-View(tf_idf_top_6)
-View(tf_idf_top_7)
-View(tf_idf_top_8)
-View(tf_idf_top_9)
-View(tf_idf_top_10)
-View(tf_idf_top_11)
-View(tf_idf_top_12)
-View(tf_idf_top_13)
-View(tf_idf_top_14)
-View(tf_idf_top_15)
-View(tf_idf_top_16)
-View(tf_idf_top_17)
-View(tf_idf_top_18)
-View(tf_idf_top_19)
-View(tf_idf_top_20)
+# --------------------------------------------------
+# 遞迴執行函式在所有摘要上
+for (i in all_abstract) {
+  # 計算每個摘要前 10 重要的單字，並存入全域變數中
+  assign(paste0("tf_idf_top_", as.character(i)),
+         list_top(get(paste0("number_of_word_", as.character(i))),
+                    get(paste0("tf_", as.character(i))),
+                    get(paste0("idf_", as.character(i))),
+                    get(paste0("tf_idf_", as.character(i)))))
+}
