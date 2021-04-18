@@ -133,3 +133,27 @@ for (i in all_abstract) {
                     get(paste0("idf_", as.character(i))),
                     get(paste0("tf_idf_", as.character(i)))))
 }
+# ============================================================
+# Result:
+# 1. 找出所有詞彙及計算出現次數
+# 2. 算出每一個詞彙的 TF-IDF
+# 3. 找出這些篇文章中前 10 名相對重要的詞彙
+# --------------------------------------------------
+index = c(1)
+# 1.
+for(i in index){
+  cat("=========== index: ", i, " ===========\n")
+  print(get(paste0("number_of_word_", as.character(index))))
+}
+# --------------------------------------------------
+# 2.
+for(i in index){
+  cat("=========== index: ", i, " ===========\n")
+  print(get(paste0("tf_idf_", as.character(index))))
+}
+# --------------------------------------------------
+# 3.
+for(i in index){
+  cat("=========== index: ", i, " ===========\n")
+  print(get(paste0("tf_idf_top_", as.character(index))))
+}
