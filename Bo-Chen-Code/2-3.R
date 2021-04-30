@@ -1,0 +1,5 @@
+arrays <- array(1:125,dim=c(5,5,5))
+print(arrays)
+which(50)
+id <- which(arrays == 50, arr.ind = TRUE)
+print(id)
