@@ -1,0 +1,37 @@
+
+# 讀取資料
+taiwan = read.csv("./Final-Project/dataset/taiwan.csv")
+
+# 資料編碼: OHE
+library(caret)
+dmy <- dummyVars(" ~ .", data = taiwan)
+taiwan <- data.frame(predict(dmy, newdata = taiwan))
+
+# 將 Label 分群
+taiwan[,'降雨量'] = round(taiwan[,'降雨量']/100)*100
+
+# 訓練與測試資料分離
+kaohsiung = taiwan[which(taiwan$城市高雄市==1),]
+kaohsiung_train = kaohsiung[which(kaohsiung$年2019!=1),]
+kaohsiung_test = kaohsiung[which(kaohsiung$年2019==1),]
+
+# 訓練模型
+library('e1071')
+kaohsiung_svm = svm(kaohsiung_train$降雨量~., data=kaohsiung_train, 
+                 type='eps-regression', kernel='linear')
+
+# 使用測試資料預測
+kaohsiung_test_D = kaohsiung_test[,c(names(kaohsiung_test) != '降雨量')]
+kaohsiung_test_L = kaohsiung_test[,c(names(kaohsiung_test) == '降雨量')]
+kaohsiung_pred = predict(kaohsiung_svm, newdata = kaohsiung_test_D)
+
+# 繪製折線圖
+library(ggplot2)
+year = seq(1,12)
+kaohsiung_plot = data.frame(kaohsiung_test_L, kaohsiung_pred, year)
+ggplot() + 
+  geom_line(data=kaohsiung_plot,aes(x=year,y=kaohsiung_test_L))+
+  geom_line(data=kaohsiung_plot,aes(x=year,y=kaohsiung_pred))
+
+
+
